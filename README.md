@@ -12,3 +12,5 @@ It should also allow for pausing the training process, evaluate/export the model
 It is also common for us to monitor the training process when doing experiments so we can, say, stop the training can adjust the parameters when the loss goes wild. It would be nice it the wrapper oversees the training process and lets us know how the model is doing. To this end, the wrapper should keep track of the metrics in training and evaluation, provide a report and some description of the trend/statistics of the metrics.
 
 The tool is going to be designed for Pytorch since it's what I am using right now. It might end up looking like Google's `Estimator` (but simpler) in Tensorflow since it does many things I was hoping for.
+
+- Oh I also found `pytorch-lightning`. Looks pretty cool.
