@@ -15,6 +15,9 @@ from pytorch_interactive_trainer import Events
 # TODO: make it an abstract class
 class Handler:
     def __call__(self, estimator, event):
+        self.handle(estimator, event)
+
+    def handle(self, estimator, event):
         raise NotImplementedError
 
 
@@ -22,7 +25,7 @@ class ValidationHandler(Handler):
     def __init__(self, test_loader: DataLoader):
         self.test_loader = test_loader
 
-    def __call__(self, estimator, event):
+    def handle(self, estimator, event):
         """
         Validate using the validation data generator
         """
@@ -50,7 +53,7 @@ class ProgressBarHandler(Handler):
         self.batch_len = batch_len
         self.print_interval = print_interval
 
-    def __call__(self, estimator, event):
+    def handle(self, estimator, event):
         if event == Events.EPOCH_START:
             self.pbar.reset(total=self.batch_len)
             self.pbar.set_description("Epoch {}".format(estimator.state.epoch))
@@ -110,7 +113,7 @@ class CheckpointHandler(Handler):
         with open(self. model_summary_path, "w") as outfile:
             outfile.write(str(model))
 
-    def __call__(self, estimator, event):
+    def handle(self, estimator, event):
         # Save the optimizer and model params
         epoch = estimator.state.epoch
         epoch_path = os.path.join(self.checkpoint_path, "epoch_{}".format(epoch))
