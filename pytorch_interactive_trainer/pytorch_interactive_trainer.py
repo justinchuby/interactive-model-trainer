@@ -3,6 +3,10 @@ import traceback
 
 import torch
 from torch.utils.data import DataLoader
+import logging
+
+logging.basicConfig(level=logging.NOTSET)
+logger = logging.getLogger(__name__)
 
 
 class Events(object):
@@ -62,7 +66,7 @@ class Estimator(object):
                 try:
                     hook(self, event)
                 except Exception:
-                    print("\nError calling hook during", event)
+                    logger.warning("Error calling hook during {}".format(event))
                     traceback.print_exc()
 
     def train(self, data_loader: DataLoader, max_epochs: int, handlers=None):
@@ -75,6 +79,9 @@ class Estimator(object):
                                     Events.BATCH_END: []
                                  }
         """
+        logger.info("Training started using {}.".format(self._device))
+        logger.info(repr(self.model))
+
         if handlers is None:
             # TODO: apply default handlers
             handlers = {}
