@@ -96,14 +96,14 @@ class Estimator(object):
             # Call handlers in EPOCH_START
             self._call_handlers(handlers, Events.EPOCH_START)
 
-            for batch_num, (feats, labels) in enumerate(data_loader):
-                self._state.step += len(feats)
+            for batch_num, batch in enumerate(data_loader):
+                self._state.step += len(batch[0])
                 self._state.batch = batch_num
                 self._call_handlers(handlers, Events.BATCH_START)
 
                 self._model.train()
                 # Transfer the features to device
-                batch = (feats.to(device), labels.to(device))
+                batch = [elem.to(device) for elem in batch]
                 loss = self.training_step(batch)
 
                 self._optimizer.zero_grad()
@@ -121,6 +121,9 @@ class Estimator(object):
             self._call_handlers(handlers, Events.EPOCH_END)
 
     def training_step(self, batch):
+        """
+        Rewrite the training step to work with different data loaders
+        """
         x, y = batch
         y_hat = self._model.forward(x)
         loss = self._criterion(y_hat, y)
