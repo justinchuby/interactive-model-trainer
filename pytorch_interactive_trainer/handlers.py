@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from natsort import natsorted
 import logging
 
-from pytorch_interactive_trainer import Events
+from .training import Events
 
 logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger(__name__)
