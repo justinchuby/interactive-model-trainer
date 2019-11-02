@@ -47,7 +47,7 @@ class ValidationHandler(Handler):
         val_result = self.validate(model, criterion, self.test_loader, device)
         message = "\t".join([f"{key}: {value:.4f}" for key, value in val_result.items()])
         logger.info(
-            f"Epoch: {epoch}\tTrain Loss: {estimator.state.avg_loss:.4f}" + message
+            f"Epoch: {epoch}\tTrain Loss: {estimator.state.avg_loss:.4f}\t" + message
         )
         model.train()
 
@@ -59,7 +59,9 @@ class ValidationHandler(Handler):
             batch_result = self.validation_step(model, criterion, batch)
 
             for key, value in batch_result.items():
-                result[key] = result.get(key, []).extend(value)
+                if key not in result:
+                    result[key] = []
+                result[key].extend(value)
 
             # Clean up
             for elem in batch:
