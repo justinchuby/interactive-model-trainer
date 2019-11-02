@@ -66,7 +66,7 @@ class Estimator(object):
                 try:
                     hook(self, event)
                 except Exception:
-                    logger.warning("Error calling hook during {}".format(event))
+                    logger.warning(f"Error calling hook during {event}")
                     traceback.print_exc()
 
     def train(self, data_loader: DataLoader, max_epochs: int, handlers=None):
@@ -79,7 +79,7 @@ class Estimator(object):
                                     Events.BATCH_END: []
                                  }
         """
-        logger.info("Training started using {}.".format(self._device))
+        logger.info(f"Training started using {self._device}.")
         logger.info(repr(self.model))
 
         if handlers is None:

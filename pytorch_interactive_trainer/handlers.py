@@ -3,6 +3,7 @@ import json
 import os
 import re
 import pathlib
+from collections import OrderedDict
 
 import numpy as np
 import torch
@@ -30,24 +31,58 @@ class Handler:
 class ValidationHandler(Handler):
     def __init__(self, test_loader: DataLoader):
         self.test_loader = test_loader
+        self._estimator = None
 
     def handle(self, estimator, event):
         """
         Validate using the validation data generator
         """
+        self._estimator = estimator
         model = estimator.model
         criterion = estimator.criterion
         model.eval()
         epoch = estimator.state.epoch
         device = estimator.device
 
-        val_loss, val_acc = test_classify(model, criterion, self.test_loader, device)
+        val_result = self.validate(model, criterion, self.test_loader, device)
+        message = "\t".join([f"{key}: {value:.4f}" for key, value in val_result.items()])
         logger.info(
-            "Epoch: {}\tTrain Loss: {:.4f}\tVal Loss: {:.4f}\tVal Accuracy: {:.4f}".format(
-                epoch, estimator.state.avg_loss, val_loss, val_acc
-            )
+            f"Epoch: {epoch}\tTrain Loss: {estimator.state.avg_loss:.4f}" + message
         )
         model.train()
+
+    def validate(self, model: nn.Module, criterion, test_loader: DataLoader, device):
+        result = OrderedDict()
+
+        for batch in test_loader:
+            batch = [elem.to(device) for elem in batch]
+            batch_result = self.validation_step(model, criterion, batch)
+
+            for key, value in batch_result.items():
+                result[key] = result.get(key, []).extend(value)
+
+            # Clean up
+            for elem in batch:
+                del elem
+            torch.cuda.empty_cache()
+
+        for key, value in result.items():
+            result[key] = np.mean(value)
+
+        return result
+
+    def validation_step(self, model, criterion, batch):
+        x, y = batch
+        outputs = model.forward(x)
+        loss = criterion(outputs, y)
+        result = OrderedDict()
+        result["val_loss"] = [loss.item()] * batch[0].size()[0]
+
+        _, y_hat = torch.max(F.softmax(outputs, dim=1), 1)
+        y_hat = y_hat.view(-1)
+        result["accuracy"] = torch.eq(y_hat, y).numpy()
+
+        return result
 
 
 class ProgressBarHandler(Handler):
@@ -63,37 +98,14 @@ class ProgressBarHandler(Handler):
     def handle(self, estimator, event):
         if event == Events.EPOCH_START:
             self.pbar.reset(total=self.batch_len)
-            self.pbar.set_description("Epoch {}".format(estimator.state.epoch))
+            self.pbar.set_description(f"Epoch {estimator.state.epoch}")
 
         batch_nb = estimator.state.batch + 1
         if batch_nb % self.print_interval == 0:
             self.pbar.set_postfix(
-                loss="{:.2f}".format(estimator.state.avg_loss), refresh=False
+                loss=f"{estimator.state.avg_loss:.2f}", refresh=False
             )
             self.pbar.update(self.print_interval)
-
-
-def test_classify(model: nn.Module, criterion, test_loader: DataLoader, device):
-    test_loss = []
-    accuracy = 0
-    total = 0
-
-    for batch_num, (feats, labels) in enumerate(test_loader):
-        feats, labels = feats.to(device), labels.to(device)
-        outputs = model(feats)
-
-        _, y_hat = torch.max(F.softmax(outputs, dim=1), 1)
-        y_hat = y_hat.view(-1)
-        loss = criterion(outputs, labels)
-
-        accuracy += torch.sum(torch.eq(y_hat, labels)).item()
-        total += len(labels)
-        # TODO: what is this?
-        test_loss.extend([loss.item()] * feats.size()[0])
-        del feats
-        del labels
-
-    return np.mean(test_loss), accuracy / total
 
 
 class CheckpointHandler(Handler):
@@ -114,9 +126,7 @@ class CheckpointHandler(Handler):
 
         version = self._next_version(os.path.join(dirpath, experiment_name))
         self.version = version
-        current_version_path = "{experiment_name}/version_{version}".format(
-            experiment_name=experiment_name, version=version
-        )
+        current_version_path = f"{experiment_name}/version_{version}"
         # checkpoint_path is a directory to contain the checkpoints
         self.checkpoint_path = os.path.join(
             dirpath, current_version_path, "checkpoints"
@@ -147,7 +157,7 @@ class CheckpointHandler(Handler):
             current_version = int(version_re.search(current_version).group(1))
             return current_version + 1
         except Exception as e:
-            logger.warning("Starting from version 0 because of error: {}".format(e))
+            logger.warning(f"Starting from version 0 because of error: {e}")
         return 0
 
     def handle(self, estimator, event):
@@ -158,10 +168,10 @@ class CheckpointHandler(Handler):
 
         # Save the optimizer and model params
         epoch = estimator.state.epoch
-        epoch_path = os.path.join(self.checkpoint_path, "epoch_{}".format(epoch))
-        model_param_path = os.path.join(epoch_path, "model_epoch_{}.pth".format(epoch))
+        epoch_path = os.path.join(self.checkpoint_path, f"epoch_{epoch}")
+        model_param_path = os.path.join(epoch_path, f"model_epoch_{epoch}.pth")
         optimizer_param_path = os.path.join(
-            epoch_path, "optimizer_epoch_{}.pth".format(epoch)
+            epoch_path, f"optimizer_epoch_{epoch}.pth"
         )
         os.makedirs(epoch_path, exist_ok=True)
         torch.save(estimator.model.state_dict(), model_param_path)
@@ -171,4 +181,4 @@ class CheckpointHandler(Handler):
         with open(estimator_state_path, "w") as outfile:
             json.dump(estimator.state.__dict__, outfile)
 
-        logger.info("Saved model at epoch {} to {}".format(epoch, model_param_path))
+        logger.info(f"Saved model at epoch {epoch} to {model_param_path}")
