@@ -1,4 +1,6 @@
 # Interactive Model Trainer
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjustinchuby%2Fpytorch-interactive-trainer.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjustinchuby%2Fpytorch-interactive-trainer?ref=badge_shield)
+
 Nothing important here, for now
 
 ## Motivation
@@ -14,3 +16,7 @@ It is also common for us to monitor the training process when doing experiments 
 The tool is going to be designed for Pytorch since it's what I am using right now. It might end up looking like Google's `Estimator` (but simpler) in Tensorflow since it does many things I was hoping for.
 
 - Oh I also found `pytorch-lightning`. Looks pretty cool.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjustinchuby%2Fpytorch-interactive-trainer.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjustinchuby%2Fpytorch-interactive-trainer?ref=badge_large)
