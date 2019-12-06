@@ -1,5 +1,9 @@
 # Interactive Model Trainer
-Nothing important here, for now
+
+## Installation
+```bash
+pip install git+https://github.com/justinchuby/pytorch-interactive-trainer.git
+```
 
 ## Motivation
 
@@ -13,4 +17,7 @@ It is also common for us to monitor the training process when doing experiments 
 
 The tool is going to be designed for Pytorch since it's what I am using right now. It might end up looking like Google's `Estimator` (but simpler) in Tensorflow since it does many things I was hoping for.
 
-- Oh I also found `pytorch-lightning`. Looks pretty cool.
+## Similar tools
+- `Catalyst` https://github.com/catalyst-team/catalyst
+- `Ignite` https://github.com/pytorch/ignite
+- `pytorch-lightning` https://github.com/williamFalcon/pytorch-lightning
