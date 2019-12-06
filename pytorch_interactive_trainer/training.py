@@ -33,10 +33,11 @@ class Estimator(object):
     To do that, I need to have a file that stores the metadata of the model
     """
 
-    def __init__(self, model, optimizer, criterion):
+    def __init__(self, model, optimizer, criterion, scheduler):
         self._model = model
         self._optimizer = optimizer
         self._criterion = criterion
+        self._scheduler = scheduler
         self._state = State()
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -51,6 +52,10 @@ class Estimator(object):
     @property
     def criterion(self):
         return self._criterion
+
+    @property
+    def scheduler(self):
+        return self._scheduler
 
     @property
     def state(self):
